@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Invoice Calculator — Texas Markets</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#f4f1eb;
+  --surface:#fffefa;
+  --border:#d9d4c7;
+  --border-strong:#b8b0a0;
+  --text:#1a1814;
+  --text-muted:#7a7468;
+  --accent:#c8420a;
+  --accent-light:#fde8df;
+  --accent2:#1a6b3a;
+  --accent2-light:#dff0e6;
+  --gold:#b8860b;
+  --gold-light:#fdf6dc;
+  --mono:'DM Mono',monospace;
+  --display:'Syne',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  min-height:100vh;
+  padding:40px 20px 80px;
+}
+
+/* Subtle dot grid background */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:radial-gradient(circle, #c8b89a 1px, transparent 1px);
+  background-size:28px 28px;
+  opacity:0.25;
+  pointer-events:none;
+  z-index:0;
+}
+
+.page{position:relative;z-index:1;max-width:900px;margin:0 auto;}
+
+/* Header */
+header{
+  border-bottom:2px solid var(--text);
+  padding-bottom:24px;
+  margin-bottom:48px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.header-left{}
+.header-tag{
+  font-family:var(--mono);
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:8px;
+}
+h1{
+  font-family:var(--display);
+  font-size:clamp(28px,5vw,48px);
+  font-weight:800;
+  line-height:1;
+  letter-spacing:-1px;
+}
+h1 span{color:var(--accent);}
+.header-right{
+  font-size:11px;
+  color:var(--text-muted);
+  text-align:right;
+  line-height:1.8;
+}
+
+/* Section titles */
+.section{
+  margin-bottom:40px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  box-shadow:4px 4px 0 var(--border);
+}
+.section-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:16px 24px;
+  border-bottom:1px solid var(--border);
+  background:var(--text);
+  color:#fff;
+}
+.section-num{
+  font-family:var(--display);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2px;
+  opacity:0.5;
+}
+.section-title{
+  font-family:var(--display);
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.section-body{padding:24px;}
+
+/* Markets grid */
+.markets-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px;
+  margin-bottom:0;
+}
+
+.market-card{
+  border:1px solid var(--border);
+  border-radius:2px;
+  overflow:hidden;
+  transition:box-shadow 0.15s;
+}
+.market-card:hover{box-shadow:3px 3px 0 var(--border-strong);}
+
+.market-label{
+  background:var(--text);
+  color:#fff;
+  font-family:var(--display);
+  font-size:18px;
+  font-weight:800;
+  text-align:center;
+  padding:10px 8px 8px;
+  letter-spacing:1px;
+}
+.market-label.ntx{background:#1a3a6b;}
+.market-label.ctx{background:#c8420a;}
+.market-label.stx{background:#1a6b3a;}
+.market-label.etx{background:#6b1a5a;}
+.market-label.htx{background:#b8860b;color:#1a1814;}
+
+.market-inputs{padding:12px;}
+
+.toggle-row{
+  display:flex;
+  gap:6px;
+  margin-bottom:10px;
+}
+.toggle-btn{
+  flex:1;
+  font-family:var(--mono);
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  padding:5px 4px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text-muted);
+  cursor:pointer;
+  border-radius:1px;
+  transition:all 0.1s;
+}
+.toggle-btn.active{
+  background:var(--text);
+  color:#fff;
+  border-color:var(--text);
+}
+
+.field-group{margin-bottom:8px;}
+label.field-label{
+  display:block;
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:4px;
+}
+
+input[type=number],input[type=text]{
+  width:100%;
+  font-family:var(--mono);
+  font-size:14px;
+  font-weight:400;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:1px;
+  background:var(--bg);
+  color:var(--text);
+  outline:none;
+  transition:border-color 0.12s,background 0.12s;
+  -moz-appearance:textfield;
+}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+input:focus{border-color:var(--text);background:#fff;}
+input.readonly{
+  background:var(--accent-light);
+  color:var(--accent);
+  border-color:var(--accent);
+  font-weight:500;
+}
+input.readonly-green{
+  background:var(--accent2-light);
+  color:var(--accent2);
+  border-color:var(--accent2);
+  font-weight:500;
+}
+input.readonly-gold{
+  background:var(--gold-light);
+  color:var(--gold);
+  border-color:var(--gold);
+  font-weight:500;
+}
+
+/* Percent section */
+.percent-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:16px;
+  align-items:end;
+}
+@media(max-width:600px){.percent-row{grid-template-columns:1fr;}}
+
+/* Invoice breakdown */
+.inv-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:16px;
+  align-items:end;
+}
+@media(max-width:500px){.inv-row{grid-template-columns:1fr;}}
+
+.breakdown-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  margin-top:16px;
+}
+.breakdown-table th{
+  font-family:var(--display);
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  text-align:left;
+  padding:8px 12px;
+  background:var(--text);
+  color:#fff;
+}
+.breakdown-table th:last-child{text-align:right;}
+.breakdown-table td{
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+  font-weight:400;
+}
+.breakdown-table td:last-child{text-align:right;font-weight:500;}
+.breakdown-table tr:nth-child(even) td{background:var(--bg);}
+.breakdown-table .total-row td{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:14px;
+  background:var(--text);
+  color:#fff;
+  border-bottom:none;
+}
+.market-pill{
+  display:inline-block;
+  font-family:var(--display);
+  font-size:11px;
+  font-weight:800;
+  padding:2px 8px;
+  border-radius:1px;
+  color:#fff;
+  margin-right:6px;
+  letter-spacing:1px;
+}
+.pill-ntx{background:#1a3a6b;}
+.pill-ctx{background:#c8420a;}
+.pill-stx{background:#1a6b3a;}
+.pill-etx{background:#6b1a5a;}
+.pill-htx{background:#b8860b;color:#1a1814;}
+
+/* Summary strip */
+.summary-strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  margin-top:24px;
+}
+.summary-cell{
+  background:var(--surface);
+  padding:14px 16px;
+  text-align:center;
+}
+.summary-cell .sc-label{
+  font-size:9px;
+  font-weight:500;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--text-muted);
+  margin-bottom:4px;
+}
+.summary-cell .sc-val{
+  font-family:var(--display);
+  font-size:20px;
+  font-weight:800;
+  color:var(--text);
+}
+.summary-cell .sc-val.accent{color:var(--accent);}
+.summary-cell .sc-val.green{color:var(--accent2);}
+
+/* Calc button */
+.calc-btn{
+  font-family:var(--display);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  padding:12px 28px;
+  background:var(--text);
+  color:#fff;
+  border:none;
+  cursor:pointer;
+  border-radius:1px;
+  transition:background 0.12s,transform 0.08s;
+  margin-top:8px;
+}
+.calc-btn:hover{background:var(--accent);}
+.calc-btn:active{transform:translateY(1px);}
+
+.result-box{
+  margin-top:12px;
+  padding:12px 16px;
+  background:var(--accent-light);
+  border:1px solid var(--accent);
+  border-radius:1px;
+  display:none;
+}
+.result-box.show{display:block;}
+.result-box .rb-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
+.result-box .rb-val{font-family:var(--display);font-size:26px;font-weight:800;color:var(--accent);}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:20px 0;}
+
+/* Helper */
+.helper-text{font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="header-tag">Texas Markets · Invoice Tool</div>
+      <h1>INVOICE<br/><span>CALCULATOR</span></h1>
+    </div>
+    <div class="header-right">
+      NTX · CTX · STX<br/>ETX · HTX<br/>
+      <span style="font-size:10px;opacity:0.6">Five-Market Breakdown</span>
+    </div>
+  </header>
+
+  <!-- ─── SECTION 1: Market Lead & Invoice Entry ─── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <span class="section-title">Market Lead & Invoice Entry</span>
+    </div>
+    <div class="section-body">
+      <p class="helper-text" style="margin-bottom:16px;">For each market, choose whether to enter <strong>Leads</strong> or an <strong>Invoice Amount</strong>. The other field will calculate automatically when both leads and invoice total are available in Section 3.</p>
+      <div class="markets-grid" id="markets-grid">
+        <!-- Injected by JS -->
+      </div>
+      <div class="summary-strip" id="market-summary" style="margin-top:24px;">
+        <div class="summary-cell">
+          <div class="sc-label">Total Leads</div>
+          <div class="sc-val" id="sum-leads">—</div>
+        </div>
+        <div class="summary-cell">
+          <div class="sc-label">Total Invoice</div>
+          <div class="sc-val accent" id="sum-invoice">—</div>
+        </div>
+        <div class="summary-cell">
+          <div class="sc-label">Avg Cost/Lead</div>
+          <div class="sc-val green" id="sum-cpl">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 2: Percent Calculator ─── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <span class="section-title">Percent Calculator</span>
+    </div>
+    <div class="section-body">
+      <p class="helper-text" style="margin-bottom:16px;">Enter any base amount and a percentage to calculate the resulting cost or value.</p>
+      <div class="percent-row">
+        <div class="field-group">
+          <label class="field-label">Base Amount ($)</label>
+          <input type="number" id="pct-base" placeholder="0.00" min="0" step="0.01" oninput="calcPercent()"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Percentage (%)</label>
+          <input type="number" id="pct-rate" placeholder="0.00" min="0" step="0.01" oninput="calcPercent()"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Result ($)</label>
+          <input type="text" id="pct-result" class="readonly" placeholder="—" readonly/>
+        </div>
+      </div>
+      <p class="helper-text">e.g. Base = $10,000 · Rate = 15% → Result = $1,500</p>
+    </div>
+  </div>
+
+  <!-- ─── SECTION 3: Invoice ÷ Leads Breakdown ─── -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <span class="section-title">Invoice ÷ Lead Volume Breakdown</span>
+    </div>
+    <div class="section-body">
+      <p class="helper-text" style="margin-bottom:16px;">Enter a total invoice amount. The tool will use lead volumes from Section 1 to calculate cost-per-lead and break the invoice cost across each market proportionally.</p>
+      <div class="inv-row">
+        <div class="field-group">
+          <label class="field-label">Total Invoice Amount ($)</label>
+          <input type="number" id="inv-total" placeholder="0.00" min="0" step="0.01" oninput="calcInvoiceBreakdown()"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Cost Per Lead ($)</label>
+          <input type="text" id="inv-cpl" class="readonly-green" placeholder="—" readonly/>
+        </div>
+      </div>
+
+      <div id="breakdown-wrap" style="display:none;">
+        <table class="breakdown-table" id="breakdown-table">
+          <thead>
+            <tr>
+              <th>Market</th>
+              <th>Leads</th>
+              <th>% of Total</th>
+              <th>Cost Allocated</th>
+            </tr>
+          </thead>
+          <tbody id="breakdown-body"></tbody>
+        </table>
+      </div>
+      <p class="helper-text" id="breakdown-hint">Enter lead volumes in Section 1 and an invoice total above to see the breakdown.</p>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+const MARKETS = [
+  { id:'ntx', label:'NTX', cls:'ntx' },
+  { id:'ctx', label:'CTX', cls:'ctx' },
+  { id:'stx', label:'STX', cls:'stx' },
+  { id:'etx', label:'ETX', cls:'etx' },
+  { id:'htx', label:'HTX', cls:'htx' },
+];
+
+// State: for each market, mode = 'leads' | 'invoice'
+const state = {};
+MARKETS.forEach(m => { state[m.id] = { mode:'leads', leads:'', invoice:'' }; });
+
+// ── Build market cards ──
+function buildMarkets() {
+  const grid = document.getElementById('markets-grid');
+  grid.innerHTML = '';
+  MARKETS.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'market-card';
+    card.innerHTML = `
+      <div class="market-label ${m.cls}">${m.label}</div>
+      <div class="market-inputs">
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="btn-leads-${m.id}" onclick="setMode('${m.id}','leads')">Leads</button>
+          <button class="toggle-btn" id="btn-invoice-${m.id}" onclick="setMode('${m.id}','invoice')">Invoice</button>
+        </div>
+        <div class="field-group" id="group-leads-${m.id}">
+          <label class="field-label"># of Leads</label>
+          <input type="number" id="leads-${m.id}" min="0" step="1" placeholder="0"
+            oninput="onMarketInput('${m.id}','leads',this.value)"/>
+        </div>
+        <div class="field-group" id="group-invoice-${m.id}" style="display:none;">
+          <label class="field-label">Invoice Amount ($)</label>
+          <input type="number" id="invoice-${m.id}" min="0" step="0.01" placeholder="0.00"
+            oninput="onMarketInput('${m.id}','invoice',this.value)"/>
+        </div>
+        <div class="field-group" style="margin-top:6px;">
+          <label class="field-label" id="derived-label-${m.id}" style="display:none;"></label>
+          <input type="text" id="derived-${m.id}" class="readonly-gold" placeholder="—" readonly style="display:none;"/>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function setMode(id, mode) {
+  state[id].mode = mode;
+  document.getElementById('btn-leads-'+id).classList.toggle('active', mode==='leads');
+  document.getElementById('btn-invoice-'+id).classList.toggle('active', mode==='invoice');
+  document.getElementById('group-leads-'+id).style.display   = mode==='leads'   ? '' : 'none';
+  document.getElementById('group-invoice-'+id).style.display = mode==='invoice' ? '' : 'none';
+  recalcAll();
+}
+
+function onMarketInput(id, field, val) {
+  state[id][field] = val === '' ? '' : parseFloat(val);
+  recalcAll();
+}
+
+// ── Master recalc ──
+function recalcAll() {
+  // Gather leads & invoices
+  let totalLeads = 0, totalInvoice = 0, leadsKnown = true, invoiceKnown = true;
+
+  MARKETS.forEach(m => {
+    const s = state[m.id];
+    const leads   = s.mode==='leads'   ? (s.leads   === '' ? null : parseFloat(s.leads))   : null;
+    const invoice = s.mode==='invoice' ? (s.invoice  === '' ? null : parseFloat(s.invoice)) : null;
+    if (leads !== null && !isNaN(leads)) totalLeads += leads; else if(s.mode==='leads') leadsKnown=false;
+    if (invoice !== null && !isNaN(invoice)) totalInvoice += invoice; else if(s.mode==='invoice') invoiceKnown=false;
+  });
+
+  // Overall CPL from market invoice totals
+  const cpl = (totalLeads > 0 && totalInvoice > 0) ? totalInvoice / totalLeads : null;
+
+  // Update derived fields per market
+  MARKETS.forEach(m => {
+    const s = state[m.id];
+    const dInput = document.getElementById('derived-'+m.id);
+    const dLabel = document.getElementById('derived-label-'+m.id);
+    let derivedVal = '';
+    let derivedLbl = '';
+
+    if (s.mode==='leads') {
+      const leads = s.leads === '' ? null : parseFloat(s.leads);
+      if (leads !== null && !isNaN(leads) && cpl !== null) {
+        derivedVal = fmt$(leads * cpl);
+        derivedLbl = 'Estimated Invoice';
+      }
+    } else {
+      const inv = s.invoice === '' ? null : parseFloat(s.invoice);
+      if (inv !== null && !isNaN(inv) && cpl !== null && cpl > 0) {
+        derivedVal = fmtN(inv / cpl);
+        derivedLbl = 'Estimated Leads';
+      }
+    }
+
+    const show = derivedVal !== '';
+    dInput.style.display = show ? '' : 'none';
+    dLabel.style.display = show ? '' : 'none';
+    dInput.value = derivedVal;
+    dLabel.textContent = derivedLbl;
+  });
+
+  // Summary strip
+  document.getElementById('sum-leads').textContent   = totalLeads   > 0 ? fmtN(totalLeads)   : '—';
+  document.getElementById('sum-invoice').textContent = totalInvoice > 0 ? fmt$(totalInvoice) : '—';
+  document.getElementById('sum-cpl').textContent     = cpl !== null     ? fmt$(cpl)+'/lead'  : '—';
+
+  // Section 3 breakdown
+  calcInvoiceBreakdown();
+}
+
+// ── Percent calc ──
+function calcPercent() {
+  const base = parseFloat(document.getElementById('pct-base').value);
+  const rate = parseFloat(document.getElementById('pct-rate').value);
+  const out  = document.getElementById('pct-result');
+  if (!isNaN(base) && !isNaN(rate)) {
+    out.value = fmt$(base * rate / 100);
+  } else {
+    out.value = '';
+  }
+}
+
+// ── Invoice ÷ Leads breakdown ──
+function calcInvoiceBreakdown() {
+  const invTotal = parseFloat(document.getElementById('inv-total').value);
+  const cplOut   = document.getElementById('inv-cpl');
+  const wrap     = document.getElementById('breakdown-wrap');
+  const hint     = document.getElementById('breakdown-hint');
+  const tbody    = document.getElementById('breakdown-body');
+
+  // Gather leads from Section 1
+  const marketLeads = [];
+  let totalLeads = 0;
+  MARKETS.forEach(m => {
+    const s = state[m.id];
+    let leads = 0;
+    if (s.mode==='leads' && s.leads !== '' && !isNaN(parseFloat(s.leads))) {
+      leads = parseFloat(s.leads);
+    } else if (s.mode==='invoice' && s.invoice !== '' && !isNaN(parseFloat(s.invoice))) {
+      // estimate leads from market invoice if overall cpl available
+      // we'll recalc after
+      leads = 0;
+    }
+    marketLeads.push({ ...m, leads });
+    totalLeads += leads;
+  });
+
+  if (isNaN(invTotal) || invTotal <= 0 || totalLeads <= 0) {
+    cplOut.value = '';
+    wrap.style.display = 'none';
+    hint.style.display = '';
+    hint.textContent = totalLeads <= 0
+      ? 'Enter lead volumes in Section 1 (Leads mode) and an invoice total above to see the breakdown.'
+      : 'Enter a total invoice amount above to see the breakdown.';
+    return;
+  }
+
+  const cpl = invTotal / totalLeads;
+  cplOut.value = fmt$(cpl) + ' / lead';
+  hint.style.display = 'none';
+  wrap.style.display = '';
+
+  tbody.innerHTML = '';
+  let runningTotal = 0;
+  marketLeads.forEach((m, i) => {
+    const pct = totalLeads > 0 ? m.leads / totalLeads : 0;
+    const allocated = i === marketLeads.length - 1
+      ? invTotal - runningTotal  // avoid rounding drift on last row
+      : m.leads * cpl;
+    runningTotal += allocated;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="market-pill pill-${m.cls}">${m.label}</span></td>
+      <td>${fmtN(m.leads)}</td>
+      <td>${(pct*100).toFixed(1)}%</td>
+      <td>${fmt$(allocated)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Totals row
+  const tfoot = document.createElement('tr');
+  tfoot.className = 'total-row';
+  tfoot.innerHTML = `
+    <td>TOTAL</td>
+    <td>${fmtN(totalLeads)}</td>
+    <td>100%</td>
+    <td>${fmt$(invTotal)}</td>`;
+  tbody.appendChild(tfoot);
+}
+
+// ── Formatters ──
+function fmt$(n){
+  if(isNaN(n)||n===null) return '—';
+  return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtN(n){
+  if(isNaN(n)||n===null) return '—';
+  return Math.round(n).toLocaleString('en-US');
+}
+
+// ── Init ──
+buildMarkets();
+</script>
+</body>
+</html>
